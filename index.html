@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+</head>
+<body>
+    <h1>N5Auth</h1>
+
+    <button id="login">Login</button>
+
+    <button id="api-query">Run API-query</button>
+
+    <div>
+        <h2>Authentication</h2>
+        <p>Authenticated: <span id="auth-status">no</span></p>
+        <div id="auth-details"></div>
+    </div>
+
+    <div>
+        <h2>API-query</h2>
+        <div id="api-response">
+
+        </div>
+    </div>
+
+    <!-- for JWS -->
+    <script src="lib/crypto.js"></script>
+    <script src="lib/rsa.js"></script>
+    <script src="lib/json-sans-eval.js"></script>
+    <script src="lib/jws-3.0.js"></script>
+    <!-- /for JWS -->
+
+    <script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+
+    <script src="N5Auth.js"></script>
+    <script>
+        $(function () {
+
+
+            N5Auth.Init({
+                urlAuthorizeEndpoint: "https://identity.arkitektum.no/core/connect/authorize",
+                urlCertificateStore: "https://identity.arkitektum.no/core/.well-known/jwks"
+            });
+
+            var isAuthenticated = N5Auth.CheckAuthentication();
+
+            if (isAuthenticated) {
+                $('#auth-status').text("yes!");
+                $('#auth-details').append("<p>id_token: " + N5Auth.authdata.id_token_json + "</p>");
+                $('#auth-details').append("<p>access_token: " + N5Auth.authdata.access_token_json + "</p>");
+            }
+
+            $('#login').click(function (e) {
+                e.preventDefault();
+
+                N5Auth.Authorize();
+            });
+
+            $('#api-query').click(function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: 'http://n5test.kxml.no/api/secure',
+                    headers: { 'Authorization': 'Bearer ' + N5Auth.authdata.access_token },
+                    success: function (data) {
+                        console.log(data);
+                        data._links.forEach(function (link) {
+                            $('#api-response').append("<p>" + link.href + "</p>");
+                        });
+                    }
+                });
+
+            });
+
+        });
+    </script>
+
+</body>
+</html>
